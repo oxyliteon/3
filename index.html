@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLBB Skillpedia</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js"></script>
+<style>
+:root {
+  --bg:       #080A10;
+  --surface:  #0D1018;
+  --raised:   #131721;
+  --lift:     #1A1F2E;
+  --border:   rgba(255,255,255,0.06);
+  --rim:      rgba(255,255,255,0.12);
+  --gold:     #C9A84C;
+  --gold-hi:  #F0CC72;
+  --gold-dim: rgba(201,168,76,0.15);
+  --p-clr:    #9B8FFF;
+  --s1-clr:   #5BAAFF;
+  --s2-clr:   #3ED9A0;
+  --ult-clr:  #FF7A50;
+  --txt:      #DCE2F0;
+  --muted:    #626C8A;
+  --drawer-w: 300px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{font-family:'DM Sans',sans-serif;color:var(--txt);}
+
+/* ── TOPBAR ───────────────────────────── */
+.topbar {
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  height:54px;
+  display:flex;align-items:center;gap:12px;
+  padding:0 18px;
+  background:rgba(8,10,16,0.85);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.menu-btn {
+  width:36px;height:36px;border-radius:10px;
+  background:var(--raised);border:1px solid var(--border);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:5px;padding:9px 8px;
+  transition:background .15s, border-color .15s;
+}
+.menu-btn:hover{background:var(--lift);border-color:var(--rim);}
+.menu-btn span {
+  display:block;width:18px;height:1.5px;
+  background:var(--txt);border-radius:2px;
+  transform-origin:center;
+}
+.topbar-logo {
+  font-family:'Cormorant Garamond',serif;
+  font-size:19px;font-weight:700;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--gold-hi),var(--gold));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-transform:uppercase;
+}
+.topbar-hero-name {
+  margin-left:auto;
+  font-size:13px;font-weight:600;color:var(--muted);
+  letter-spacing:.5px;
+  transition:color .3s;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;
+}
+.topbar-hero-name.active{color:var(--gold);}
+
+/* ── OVERLAY ─────────────────────────── */
+.overlay {
+  position:fixed;inset:0;z-index:290;
+  background:rgba(0,0,0,0.65);
+  backdrop-filter:blur(3px);
+  opacity:0;pointer-events:none;
+  transition:opacity .3s;
+}
+.overlay.show{opacity:1;pointer-events:auto;}
+
+/* ── DRAWER ──────────────────────────── */
+.drawer {
+  position:fixed;top:0;left:0;bottom:0;z-index:300;
+  width:var(--drawer-w);
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  transform:translateX(calc(-1 * var(--drawer-w)));
+  will-change:transform;
+  overflow:hidden;
+}
+.drawer-head {
+  padding:18px 18px 14px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.drawer-logo {
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px;font-weight:800;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--gold-hi),var(--gold));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-transform:uppercase;display:flex;align-items:center;gap:8px;
+}
+.search-wrap {
+  margin-top:12px;position:relative;
+}
+.search-wrap input {
+  width:100%;background:var(--raised);
+  border:1px solid var(--border);border-radius:10px;
+  padding:9px 12px 9px 36px;
+  font-size:13px;color:var(--txt);
+  font-family:'DM Sans',sans-serif;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.search-wrap input:focus{border-color:rgba(201,168,76,.45);box-shadow:0 0 0 3px rgba(201,168,76,.08);}
+.search-wrap input::placeholder{color:var(--muted);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;}
+.roles {
+  display:flex;flex-wrap:wrap;gap:5px;
+  padding:10px 18px;border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.role-pill {
+  font-size:11px;font-weight:600;padding:3px 10px;
+  border-radius:20px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;
+  font-family:'DM Sans',sans-serif;letter-spacing:.3px;
+  transition:all .15s;
+}
+.role-pill:hover{color:var(--txt);border-color:var(--rim);}
+.role-pill.on{
+  background:var(--gold-dim);
+  border-color:rgba(201,168,76,.5);
+  color:var(--gold-hi);
+}
+.hero-scroll {
+  flex:1;overflow-y:auto;padding:8px;
+}
+.hero-scroll::-webkit-scrollbar{width:3px;}
+.hero-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.hitem {
+  padding:9px 12px;border-radius:9px;cursor:pointer;
+  font-size:13px;font-weight:500;color:var(--muted);
+  transition:background .12s,color .12s,border-color .12s;
+  border-left:2px solid transparent;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.hitem:hover{background:var(--raised);color:var(--txt);}
+.hitem.on {
+  background:linear-gradient(90deg,var(--lift),var(--raised));
+  border-left-color:var(--gold);color:var(--gold-hi);font-weight:600;
+}
+.hero-count {
+  padding:8px 18px;font-size:11px;color:var(--muted);
+  border-top:1px solid var(--border);flex-shrink:0;
+  letter-spacing:.5px;
+}
+
+/* ── MAIN CONTENT ────────────────────── */
+.main {
+  position:fixed;inset:0;top:54px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+/* ambient glow bg */
+.main::before {
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 40% at 70% 20%, rgba(201,168,76,.04) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 20% 80%, rgba(91,170,255,.03) 0%, transparent 60%);
+}
+
+/* hero header */
+.hero-hd {
+  padding:22px 28px 18px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;position:relative;overflow:hidden;
+}
+.hero-hd::after {
+  content:'';position:absolute;bottom:0;left:28px;right:28px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);
+}
+.hd-placeholder {
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px;color:var(--muted);font-weight:600;letter-spacing:1px;
+}
+.hd-name {
+  font-family:'Cormorant Garamond',serif;
+  font-size:30px;font-weight:800;letter-spacing:1.5px;
+  background:linear-gradient(135deg,#FFF1C8,var(--gold));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  line-height:1;
+  display:none;
+}
+.hd-badges{margin-top:8px;display:flex;gap:7px;flex-wrap:wrap;}
+.hd-badge {
+  font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+  background:var(--raised);border:1px solid var(--border);color:var(--muted);
+  letter-spacing:.4px;
+}
+
+/* skill grid */
+.skill-grid {
+  flex:1;overflow-y:auto;
+  padding:24px 28px 32px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:16px;
+  align-content:start;
+}
+.skill-grid::-webkit-scrollbar{width:3px;}
+.skill-grid::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* skill card */
+.scard {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px 20px;
+  position:relative;overflow:hidden;
+  cursor:default;
+  opacity:0;transform:translateY(20px); /* initial state for GSAP */
+}
+.scard::before {
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:16px 16px 0 0;
+}
+.scard.p::before{background:var(--p-clr);}
+.scard.s1::before{background:var(--s1-clr);}
+.scard.s2::before{background:var(--s2-clr);}
+.scard.ult::before{background:var(--ult-clr);}
+
+.scard-glow {
+  position:absolute;top:-40px;right:-40px;
+  width:120px;height:120px;border-radius:50%;
+  opacity:.07;filter:blur(28px);pointer-events:none;
+}
+.scard.p .scard-glow{background:var(--p-clr);}
+.scard.s1 .scard-glow{background:var(--s1-clr);}
+.scard.s2 .scard-glow{background:var(--s2-clr);}
+.scard.ult .scard-glow{background:var(--ult-clr);}
+
+.scard:hover {
+  border-color:var(--rim);
+  background:var(--raised);
+}
+.scard-tag {
+  display:flex;align-items:center;gap:7px;
+  margin-bottom:12px;
+}
+.scard-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.scard.p .scard-dot{background:var(--p-clr);box-shadow:0 0 6px var(--p-clr);}
+.scard.s1 .scard-dot{background:var(--s1-clr);box-shadow:0 0 6px var(--s1-clr);}
+.scard.s2 .scard-dot{background:var(--s2-clr);box-shadow:0 0 6px var(--s2-clr);}
+.scard.ult .scard-dot{background:var(--ult-clr);box-shadow:0 0 6px var(--ult-clr);}
+
+.scard-label {
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+}
+.scard.p .scard-label{color:var(--p-clr);}
+.scard.s1 .scard-label{color:var(--s1-clr);}
+.scard.s2 .scard-label{color:var(--s2-clr);}
+.scard.ult .scard-label{color:var(--ult-clr);}
+
+.scard-name {
+  font-family:'Cormorant Garamond',serif;
+  font-size:19px;font-weight:700;color:var(--txt);
+  line-height:1.2;margin-bottom:10px;
+}
+.scard-meaning {
+  font-size:12.5px;line-height:1.6;color:var(--muted);
+  border-top:1px solid var(--border);padding-top:10px;
+  font-style:italic;
+}
+
+/* empty */
+.empty {
+  grid-column:1/-1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:320px;gap:14px;color:var(--muted);text-align:center;
+}
+.empty-ico{font-size:48px;opacity:.3;}
+.empty-t1{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;color:#4A5270;}
+.empty-t2{font-size:13px;}
+
+/* ── RESPONSIVE ──────────────────────── */
+@media(max-width:600px){
+  .skill-grid{padding:16px;grid-template-columns:1fr;}
+  .hero-hd{padding:16px 18px;}
+  .hd-name{font-size:24px;}
+  :root{--drawer-w:270px;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="Buka menu">
+    <span id="bar1"></span><span id="bar2"></span><span id="bar3"></span>
+  </button>
+  <div class="topbar-logo">⚔ Skillpedia</div>
+  <div class="topbar-hero-name" id="topbarHero">Pilih hero…</div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay"></div>
+
+<!-- DRAWER -->
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-logo">⚔ MLBB</div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Cari hero…" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="roles" id="roleRow"></div>
+  <div class="hero-scroll" id="heroScroll"></div>
+  <div class="hero-count" id="heroCount"></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="hero-hd" id="heroHd">
+    <div class="hd-placeholder" id="hdPlaceholder">✦ Pilih hero dari menu</div>
+    <div class="hd-name" id="hdName"></div>
+    <div class="hd-badges" id="hdBadges"></div>
+  </div>
+
+  <div class="skill-grid" id="skillGrid">
+    <div class="empty">
+      <div class="empty-ico">🏹</div>
+      <div class="empty-t1">Belum ada hero dipilih</div>
+      <div class="empty-t2">Buka menu → klik nama hero<br>untuk melihat nama skill & artinya</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── GSAP setup ──────────────────────────────────────────────
+CustomEase.create("smooth", "M0,0 C0.25,0 0,1 1,1");
+
+// ── DATA ────────────────────────────────────────────────────
+const DB = {
+  "Gusion":    {p:{n:"Hextech Master",m:"Ahli Sihir Teknologi"},s1:{n:"Shadow Blade",m:"Pedang Bayangan"},s2:{n:"Flying Dagger",m:"Belati Terbang"},ult:{n:"Incandescence",m:"Pijaran Api yang Membara"}},
+  "Ling":      {p:{n:"Cloud Walker",m:"Pejalan di Atas Awan"},s1:{n:"Finch Poise",m:"Keseimbangan Burung Pipit"},s2:{n:"Defiant Sword",m:"Pedang Penantang"},ult:{n:"Tempest of Blades",m:"Badai Pedang"}},
+  "Hayabusa":  {p:{n:"Ninja Vision",m:"Penglihatan Ninja"},s1:{n:"Phantom Shuriken",m:"Shuriken Hantu"},s2:{n:"Quad Shadow",m:"Bayangan Empat Arah"},ult:{n:"Ougi: Shadow Kill",m:"Rahasia: Sang Pembunuh Bayangan"}},
+  "Lancelot":  {p:{n:"Soul Cutter",m:"Pemotong Jiwa"},s1:{n:"Puncture",m:"Tusukan Mematikan"},s2:{n:"Thorned Rose",m:"Mawar Berduri"},ult:{n:"Phantom Execution",m:"Eksekusi Hantu"}},
+  "Saber":     {p:{n:"Armor Breaker",m:"Penghancur Perisai Baja"},s1:{n:"Flying Sword",m:"Pedang Terbang"},s2:{n:"Charge",m:"Serangan Kilat"},ult:{n:"Triple Sweep",m:"Sapuan Tiga Kali"}},
+  "Natalia":   {p:{n:"Assassin's Instinct",m:"Insting Pembunuh Bayaran"},s1:{n:"Claw Dash",m:"Terjang Cakar"},s2:{n:"Smoke Bomb",m:"Bom Asap"},ult:{n:"Cold Blooded",m:"Berdarah Dingin"}},
+  "Karina":    {p:{n:"Shadow Rush",m:"Lari dalam Kegelapan"},s1:{n:"Dance of Blades",m:"Tarian Pedang"},s2:{n:"Elusiveness",m:"Kelincahan"},ult:{n:"Shadow Assault",m:"Serangan dari Bayangan"}},
+  "Selena":    {p:{n:"Symbiote",m:"Simbiosis dengan Makhluk Abyss"},s1:{n:"Abyssal Arrow",m:"Panah Jurang Tak Berdasar"},s2:{n:"Entangle",m:"Mengikat / Menjerat"},ult:{n:"Primal Darkness",m:"Kegelapan Purba"}},
+  "Fanny":     {p:{n:"Precision",m:"Ketepatan yang Mematikan"},s1:{n:"Steel Cable",m:"Kabel Baja"},s2:{n:"Tornado Strike",m:"Serangan Puting Beliung"},ult:{n:"Cut Throat",m:"Potong Tenggorokan"}},
+  "Helcurt":   {p:{n:"Race Advantage",m:"Keunggulan Ras"},s1:{n:"Shadow Transition",m:"Transisi ke Gelap"},s2:{n:"Deadly Stinger",m:"Sengatan Mematikan"},ult:{n:"Dark Night Falls",m:"Malam Gelap Tiba"}},
+  "Hanzo":     {p:{n:"Ame no Habakiri",m:"Pedang Pembelah Langit (Jepang)"},s1:{n:"Ninjutsu: Demon Feast",m:"Seni Ninja: Pesta Iblis"},s2:{n:"Ninjutsu: Soul Steal",m:"Seni Ninja: Pencuri Jiwa"},ult:{n:"Kinjutsu: Pinnacle Ninja",m:"Ilmu Terlarang: Ninja Puncak"}},
+  "Aamon":     {p:{n:"Invisible Blades",m:"Pedang Tak Kasat Mata"},s1:{n:"Slaughter",m:"Pembantaian"},s2:{n:"Slayer",m:"Pembunuh"},ult:{n:"Endless Shards",m:"Serpihan Tak Berakhir"}},
+  "Benedetta": {p:{n:"Elapsed Daytime",m:"Waktu Siang yang Berlalu"},s1:{n:"Phantom Slash",m:"Tebasan Hantu"},s2:{n:"An Eye for an Eye",m:"Mata Dibalas Mata"},ult:{n:"Aloft",m:"Di Ketinggian"}},
+  "Joy":       {p:{n:"Rhythm Maker",m:"Pencipta Irama"},s1:{n:"Joyful Steps",m:"Langkah Gembira"},s2:{n:"Surprise!",m:"Kejutan!"},ult:{n:"Party Starter",m:"Pemulai Pesta"}},
+  "Nolan":     {p:{n:"Rift Walker",m:"Pejalan Celah Dimensi"},s1:{n:"Nano Slash",m:"Tebasan Nano"},s2:{n:"Subspace",m:"Ruang Sub-Dimensi"},ult:{n:"Hyperspace",m:"Ruang Hiper"}},
+  "Chou":      {p:{n:"Only Fast",m:"Hanya Kecepatan"},s1:{n:"Jeet Kune Do",m:"Cara Menghantam (Seni Bela Diri Bruce Lee)"},s2:{n:"Shunpo",m:"Langkah Seni Kilat"},ult:{n:"The Way of Dragon",m:"Jalan Sang Naga"}},
+  "Aldous":    {p:{n:"Contract: Soul",m:"Kontrak dengan Jiwa"},s1:{n:"Contract: Life Steal",m:"Kontrak: Penyedot Nyawa"},s2:{n:"Contract: Explosion",m:"Kontrak: Ledakan"},ult:{n:"Contract: Chase Fate",m:"Kontrak: Mengejar Takdir"}},
+  "Paquito":   {p:{n:"Heavy Handed",m:"Tangan Berat / Tinju Berat"},s1:{n:"Knockout Strike",m:"Pukulan KO"},s2:{n:"Jab",m:"Tinju Cepat"},ult:{n:"Champ Stance",m:"Sikap Sang Juara"}},
+  "Yu Zhong":  {p:{n:"Dragon Soul",m:"Jiwa Naga"},s1:{n:"Dragon Breath",m:"Nafas Naga"},s2:{n:"Dragon Tail",m:"Ekor Naga"},ult:{n:"Black Dragon Form",m:"Wujud Naga Hitam"}},
+  "X.Borg":    {p:{n:"Full Metal Body",m:"Tubuh Penuh Baja"},s1:{n:"Fire Missiles",m:"Rudal Api"},s2:{n:"Flamethrower",m:"Penyembur Api"},ult:{n:"Last Torment",m:"Siksaan Terakhir"}},
+  "Jawhead":   {p:{n:"Adaptive Armor",m:"Armor Adaptif"},s1:{n:"Smart Missiles",m:"Rudal Pintar"},s2:{n:"Ejector",m:"Alat Pelontar"},ult:{n:"Unstoppable Force",m:"Kekuatan Tak Terbendung"}},
+  "Badang":    {p:{n:"Fist of Wrath",m:"Tinju Murka"},s1:{n:"Churn",m:"Pengguncang"},s2:{n:"Fissure",m:"Rekahan Bumi"},ult:{n:"Fist Break",m:"Pukulan Penghancur"}},
+  "Argus":     {p:{n:"Warmonger",m:"Pemicu Perang"},s1:{n:"Meteoric Sword",m:"Pedang Meteor"},s2:{n:"Demonic Grip",m:"Cengkeraman Iblis"},ult:{n:"Eternal Evil",m:"Kejahatan Abadi"}},
+  "Martis":    {p:{n:"Ashura's Wrath",m:"Kemurkaan Ashura"},s1:{n:"Ashura Aura",m:"Aura Ashura"},s2:{n:"Mortal Coil",m:"Lilitan Fana"},ult:{n:"Decimation",m:"Penghancuran Massal"}},
+  "Ruby":      {p:{n:"Let's Dance!",m:"Ayo Menari!"},s1:{n:"Be Good",m:"Jadilah Baik"},s2:{n:"Don't Run Wolf King",m:"Jangan Lari Raja Serigala"},ult:{n:"I'm Offended!",m:"Aku Tersinggung!"}},
+  "Dyrroth":   {p:{n:"Prince of Abyss",m:"Pangeran Jurang"},s1:{n:"Abyssal Strike",m:"Serangan Jurang"},s2:{n:"Shattering Strike",m:"Serangan Penghancur"},ult:{n:"Abyssal Rupture",m:"Retakan Jurang"}},
+  "Khaleed":   {p:{n:"Sand Walk",m:"Berjalan di Pasir"},s1:{n:"Desert Tornado",m:"Tornado Gurun"},s2:{n:"Quicksand Guard",m:"Penjaga Pasir Hisap"},ult:{n:"Sandstorm",m:"Badai Pasir"}},
+  "Terizla":   {p:{n:"Body of Steel",m:"Tubuh Baja"},s1:{n:"Torment",m:"Siksaan"},s2:{n:"Execution Strike",m:"Serangan Eksekusi"},ult:{n:"Penalty Zone",m:"Zona Hukuman"}},
+  "Eudora":    {p:{n:"Superconductor",m:"Superkonduktor"},s1:{n:"Forked Lightning",m:"Petir Bercabang"},s2:{n:"Ball Lightning",m:"Bola Petir"},ult:{n:"Thunder's Wrath",m:"Murka Guntur"}},
+  "Kagura":    {p:{n:"Seimei Umbrella Open",m:"Payung Seimei Terbuka"},s1:{n:"Rasho Umbrella Throw",m:"Lempar Payung Rasho"},s2:{n:"Vermillion Snap",m:"Jepitan Merah Tua"},ult:{n:"Yin Yang Overturn",m:"Pembalikan Yin Yang"}},
+  "Lunox":     {p:{n:"Dreamweaver",m:"Penjalin Mimpi"},s1:{n:"Starlight Pulse",m:"Detak Cahaya Bintang"},s2:{n:"Chaos Assault",m:"Serangan Kekacauan"},ult:{n:"Cosmic Fission",m:"Fisi Kosmik"}},
+  "Valir":     {p:{n:"Ashing",m:"Berubah Menjadi Abu"},s1:{n:"Burst Fireball",m:"Bola Api Ledakan"},s2:{n:"Searing Torrent",m:"Aliran Panas"},ult:{n:"Vengeance Flame",m:"Api Dendam"}},
+  "Xavier":    {p:{n:"Transcendence",m:"Melampaui Batas"},s1:{n:"Infinite Extension",m:"Perpanjangan Tanpa Batas"},s2:{n:"Mystic Field",m:"Lapangan Mistik"},ult:{n:"Dawning Light",m:"Cahaya Fajar"}},
+  "Cecilion":  {p:{n:"Thirst",m:"Dahaga"},s1:{n:"Bat Impact",m:"Benturan Kelelawar"},s2:{n:"Sanguine Claws",m:"Cakar Berdarah"},ult:{n:"Bats Feast",m:"Pesta Kelelawar"}},
+  "Vale":      {p:{n:"Windtalker",m:"Penutur Angin"},s1:{n:"Wind Blade",m:"Pedang Angin"},s2:{n:"Windstorm",m:"Badai Angin"},ult:{n:"Windward",m:"Ke Arah Angin"}},
+  "Novaria":   {p:{n:"Astral Force",m:"Kekuatan Astral"},s1:{n:"Starlit Hourglass",m:"Jam Pasir Berbintang"},s2:{n:"Arcane Ring",m:"Cincin Arkana"},ult:{n:"Celestial Meteor",m:"Meteor Surgawi"}},
+  "Lylia":     {p:{n:"Gloom",m:"Kegelapan / Kemurungan"},s1:{n:"Magic Shockwave",m:"Gelombang Kejut Sihir"},s2:{n:"Black Shoes",m:"Sepatu Hitam"},ult:{n:"Lightness",m:"Kebebasan / Keringanan"}},
+  "Chang'e":   {p:{n:"Trouble Maker",m:"Pembuat Masalah"},s1:{n:"Trouble Bubbles",m:"Gelembung Masalah"},s2:{n:"Crescent Moon",m:"Bulan Sabit"},ult:{n:"Meteor Shower",m:"Hujan Meteor"}},
+  "Odette":    {p:{n:"Lakeshore Ambiance",m:"Suasana Tepi Danau"},s1:{n:"Avian Authority",m:"Wibawa Burung"},s2:{n:"Blue Nova",m:"Nova Biru"},ult:{n:"Swan Song",m:"Nyanyian Angsa"}},
+  "Layla":     {p:{n:"Void Projectile",m:"Proyektil Void"},s1:{n:"Malefic Bomb",m:"Bom Jahat"},s2:{n:"Void Shots",m:"Tembakan Void"},ult:{n:"Destruction Rush",m:"Serangan Penghancur"}},
+  "Miya":      {p:{n:"Moon Blessing",m:"Berkah Bulan"},s1:{n:"Arrow of Moonlight",m:"Panah Cahaya Bulan"},s2:{n:"Turbo Stealth",m:"Siluman Turbo"},ult:{n:"Hidden Moonlight",m:"Cahaya Bulan Tersembunyi"}},
+  "Clint":     {p:{n:"Double Shot",m:"Tembakan Ganda"},s1:{n:"Quick Draw",m:"Cabut Cepat"},s2:{n:"Trapper",m:"Penjerat"},ult:{n:"Grenade Bombardment",m:"Bombardemen Granat"}},
+  "Granger":   {p:{n:"Death Rhapsody",m:"Rapsodi Kematian"},s1:{n:"Rhapsody",m:"Rapsodi"},s2:{n:"Rondo",m:"Lagu Rondo"},ult:{n:"Death Sonata",m:"Sonata Kematian"}},
+  "Wanwan":    {p:{n:"Tiger Pace",m:"Langkah Harimau"},s1:{n:"Needles in Flowers",m:"Jarum di Balik Bunga"},s2:{n:"Swallow's Path",m:"Jalan Burung Layang-Layang"},ult:{n:"Crossbow of Tang",m:"Panah Silang Dinasti Tang"}},
+  "Melissa":   {p:{n:"Ibble Dibble",m:"Kerumitan Tak Beraturan"},s1:{n:"Falling Paper Dolls",m:"Boneka Kertas Jatuh"},s2:{n:"Go Away",m:"Pergi Sana"},ult:{n:"Let's Have Fun!",m:"Ayo Bersenang-senang!"}},
+  "Brody":     {p:{n:"Abyss Corrosion",m:"Korosi Jurang"},s1:{n:"Abyss Impact",m:"Benturan Jurang"},s2:{n:"Torn-Apart Memory",m:"Kenangan yang Tercabik"},ult:{n:"Torn-Apart Space",m:"Ruang yang Tercabik"}},
+  "Karrie":    {p:{n:"Lightwheel",m:"Roda Cahaya"},s1:{n:"Spinning Lightwheel",m:"Roda Cahaya Berputar"},s2:{n:"Phantom Step",m:"Langkah Hantu"},ult:{n:"Speedy Lightwheel",m:"Roda Cahaya Kencang"}},
+  "Tigreal":   {p:{n:"Patience",m:"Kesabaran"},s1:{n:"Attack Wave",m:"Gelombang Serangan"},s2:{n:"Sacred Hammer",m:"Palu Suci"},ult:{n:"Implosion",m:"Ledakan ke Dalam"}},
+  "Khufra":    {p:{n:"Spell Curse",m:"Kutukan Mantra"},s1:{n:"Tyrant's Revenge",m:"Balas Dendam Tirani"},s2:{n:"Bouncing Ball",m:"Bola Memantul"},ult:{n:"Tyrant's Rage",m:"Amukan Tirani"}},
+  "Atlas":     {p:{n:"Frigid Breath",m:"Nafas Beku"},s1:{n:"Perfect Match",m:"Kecocokan Sempurna"},s2:{n:"Frigid Breath Active",m:"Aktifkan Nafas Beku"},ult:{n:"Fatal Links",m:"Tautan Mematikan"}},
+  "Franco":    {p:{n:"Wasteland Force",m:"Kekuatan Tanah Tandus"},s1:{n:"Iron Hook",m:"Kait Besi"},s2:{n:"Fury Shock",m:"Kejutan Kemarahan"},ult:{n:"Bloody Hunt",m:"Perburuan Berdarah"}},
+  "Johnson":   {p:{n:"Power Charge",m:"Pengisian Daya"},s1:{n:"Electromag Rays",m:"Sinar Elektromagnetik"},s2:{n:"Armor Overdrive",m:"Overdrive Armor"},ult:{n:"Rapid Touchdown",m:"Pendaratan Cepat"}},
+  "Khufra":    {p:{n:"Spell Curse",m:"Kutukan Sihir"},s1:{n:"Tyrant's Revenge",m:"Balas Dendam Tirani"},s2:{n:"Bouncing Ball",m:"Bola Memantul"},ult:{n:"Tyrant's Rage",m:"Amukan Tirani"}},
+  "Grock":     {p:{n:"Ancestral Gift",m:"Hadiah Leluhur"},s1:{n:"Power of Nature",m:"Kekuatan Alam"},s2:{n:"Cave Expedition",m:"Ekspedisi Gua"},ult:{n:"Wild Charge",m:"Serangan Liar"}},
+  "Baxia":     {p:{n:"Baxia Mark",m:"Tanda Baxia"},s1:{n:"Baxia's Tumble",m:"Gulungan Baxia"},s2:{n:"Shield of Spirit",m:"Perisai Roh"},ult:{n:"Tortoise Puissance",m:"Kekuatan Kura-kura"}},
+  "Hylos":     {p:{n:"Law and Order",m:"Hukum dan Ketertiban"},s1:{n:"Ring of Punishment",m:"Cincin Hukuman"},s2:{n:"Glorious Pathway",m:"Jalur Kejayaan"},ult:{n:"Glorious Pathway (Full)",m:"Jalur Kejayaan Penuh"}},
+  "Belerick":  {p:{n:"Deadly Thorns",m:"Duri Mematikan"},s1:{n:"Nature's Seed",m:"Benih Alam"},s2:{n:"Ancient Seed",m:"Benih Purba"},ult:{n:"Wrath of Dryad",m:"Murka Dryad (Roh Pohon)"}},
+  "Angela":    {p:{n:"Smart Heart",m:"Hati Cerdas"},s1:{n:"Love Wave",m:"Gelombang Cinta"},s2:{n:"Puppet on a String",m:"Boneka di Tali"},ult:{n:"Heartguard",m:"Pelindung Hati"}},
+  "Estes":     {p:{n:"Code of Moonlight",m:"Kode Cahaya Bulan"},s1:{n:"Moonlight Immersion",m:"Perendaman Cahaya Bulan"},s2:{n:"Ancient Surge",m:"Lonjakan Kuno"},ult:{n:"Blessing of Moon Goddess",m:"Berkah Dewi Bulan"}},
+  "Rafaela":   {p:{n:"Deity Trial",m:"Ujian Dewa"},s1:{n:"Light of Retribution",m:"Cahaya Pembalasan"},s2:{n:"Holy Healing",m:"Penyembuhan Suci"},ult:{n:"Holy Baptism",m:"Pembaptisan Suci"}},
+  "Floryn":    {p:{n:"Dew's Blessing",m:"Berkah Embun"},s1:{n:"Sow",m:"Menabur Benih"},s2:{n:"Sprout",m:"Tunas Tumbuh"},ult:{n:"Blossom",m:"Mekar"}},
+  "Mathilda":  {p:{n:"Ancestral Guidance",m:"Bimbingan Leluhur"},s1:{n:"Soul Bloom",m:"Mekar Jiwa"},s2:{n:"Guiding Wind",m:"Angin Penuntun"},ult:{n:"Circling Eagle",m:"Elang Berputar"}},
+  "Diggie":    {p:{n:"Young Again",m:"Muda Kembali"},s1:{n:"Time Bomb",m:"Bom Waktu"},s2:{n:"Reverse Time",m:"Membalikkan Waktu"},ult:{n:"Time Journey",m:"Perjalanan Waktu"}},
+  "Faramis":   {p:{n:"Shadow Stampede",m:"Penjejal Bayangan"},s1:{n:"Shadow Stampede S1",m:"Hantaman Bayangan"},s2:{n:"Ghost Bursters",m:"Penghancur Hantu"},ult:{n:"Cult Altar",m:"Altar Kultus"}},
+  "Carmilla":  {p:{n:"Vampire Pact",m:"Pakta Vampir"},s1:{n:"Crimson Flower",m:"Bunga Merah Darah"},s2:{n:"Bloodbath",m:"Mandi Darah"},ult:{n:"Curse of Blood",m:"Kutukan Darah"}},
+  "Chip":      {p:{n:"Installed Programs",m:"Program Terpasang"},s1:{n:"Crash",m:"Tabrakan"},s2:{n:"Portal",m:"Portal"},ult:{n:"System Override",m:"Override Sistem"}},
+};
+
+const HEROES = [
+  ["Gusion","Assassin"],["Ling","Assassin"],["Hayabusa","Assassin"],["Lancelot","Assassin"],
+  ["Saber","Assassin"],["Natalia","Assassin"],["Karina","Assassin"],["Selena","Assassin/Mage"],
+  ["Fanny","Assassin"],["Helcurt","Assassin"],["Hanzo","Assassin"],["Aamon","Assassin"],
+  ["Benedetta","Assassin/Fighter"],["Joy","Assassin"],["Nolan","Assassin"],
+  ["Chou","Fighter"],["Aldous","Fighter"],["Paquito","Fighter"],["Yu Zhong","Fighter"],
+  ["X.Borg","Fighter"],["Jawhead","Fighter"],["Badang","Fighter"],["Argus","Fighter"],
+  ["Martis","Fighter"],["Ruby","Fighter"],["Dyrroth","Fighter"],["Khaleed","Fighter"],["Terizla","Fighter/Tank"],
+  ["Eudora","Mage"],["Kagura","Mage"],["Lunox","Mage"],["Valir","Mage"],["Xavier","Mage"],
+  ["Cecilion","Mage"],["Vale","Mage"],["Novaria","Mage"],["Lylia","Mage"],["Chang'e","Mage"],
+  ["Odette","Mage"],
+  ["Layla","Marksman"],["Miya","Marksman"],["Clint","Marksman"],["Granger","Marksman"],
+  ["Wanwan","Marksman"],["Melissa","Marksman"],["Brody","Marksman"],["Karrie","Marksman"],
+  ["Tigreal","Tank"],["Khufra","Tank"],["Atlas","Tank"],["Franco","Tank"],["Johnson","Tank"],
+  ["Grock","Tank/Fighter"],["Baxia","Tank"],["Hylos","Tank"],["Belerick","Tank"],
+  ["Angela","Support"],["Estes","Support"],["Rafaela","Support"],["Floryn","Support"],
+  ["Mathilda","Support/Assassin"],["Diggie","Support"],["Faramis","Support/Mage"],
+  ["Carmilla","Support/Tank"],["Chip","Support/Tank"],
+];
+
+const ROLES = ["All","Tank","Fighter","Marksman","Mage","Assassin","Support"];
+
+function fallback(n){return{
+  p:{n:`${n}'s Resolve`,m:`Tekad ${n}`},
+  s1:{n:`${n}'s Strike`,m:`Serangan ${n}`},
+  s2:{n:`${n}'s Blessing`,m:`Berkah ${n}`},
+  ult:{n:`${n}'s Wrath`,m:`Kemurkaan ${n}`}
+};}
+
+// ── STATE ────────────────────────────────────────────────────
+let activeRole="All", query="", selected=null, drawerOpen=false;
+
+// ── DRAWER LOGIC ─────────────────────────────────────────────
+const drawer=document.getElementById("drawer");
+const overlay=document.getElementById("overlay");
+const menuBtn=document.getElementById("menuBtn");
+const bar1=document.getElementById("bar1"), bar2=document.getElementById("bar2"), bar3=document.getElementById("bar3");
+
+function openDrawer(){
+  drawerOpen=true;
+  gsap.to(drawer,{x:0,duration:.38,ease:"power3.out"});
+  overlay.classList.add("show");
+  gsap.to(bar1,{y:6.5,rotation:45,duration:.25,ease:"power2.inOut"});
+  gsap.to(bar2,{opacity:0,duration:.15});
+  gsap.to(bar3,{y:-6.5,rotation:-45,duration:.25,ease:"power2.inOut"});
+}
+function closeDrawer(){
+  drawerOpen=false;
+  gsap.to(drawer,{x:-300,duration:.32,ease:"power3.in"});
+  overlay.classList.remove("show");
+  gsap.to(bar1,{y:0,rotation:0,duration:.25,ease:"power2.inOut"});
+  gsap.to(bar2,{opacity:1,duration:.2});
+  gsap.to(bar3,{y:0,rotation:0,duration:.25,ease:"power2.inOut"});
+}
+menuBtn.addEventListener("click",()=>drawerOpen?closeDrawer():openDrawer());
+overlay.addEventListener("click",closeDrawer);
+
+// ── ROLE TABS ────────────────────────────────────────────────
+const roleRow=document.getElementById("roleRow");
+function buildRoles(){
+  roleRow.innerHTML=ROLES.map(r=>
+    `<button class="role-pill${activeRole===r?" on":""}" data-r="${r}">${r}</button>`
+  ).join("");
+  roleRow.querySelectorAll(".role-pill").forEach(b=>{
+    b.addEventListener("click",()=>{
+      activeRole=b.dataset.r;buildRoles();renderList();
+    });
+  });
+}
+
+// ── HERO LIST ────────────────────────────────────────────────
+function filtered(){
+  return HEROES.filter(([n,r])=>{
+    const matchR=activeRole==="All"||r.split("/").includes(activeRole);
+    const matchQ=!query||n.toLowerCase().includes(query);
+    return matchR&&matchQ;
+  });
+}
+function renderList(){
+  const list=filtered();
+  const el=document.getElementById("heroScroll");
+  const countEl=document.getElementById("heroCount");
+  countEl.textContent=`${list.length} hero`;
+  if(!list.length){el.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">Tidak ditemukan</div>`;return;}
+  el.innerHTML=list.map(([n])=>
+    `<div class="hitem${selected===n?" on":""}" data-n="${n}">${n}</div>`
+  ).join("");
+  el.querySelectorAll(".hitem").forEach(item=>{
+    item.addEventListener("click",()=>{
+      selected=item.dataset.n;
+      const hero=HEROES.find(([n])=>n===selected);
+      renderList();
+      showSkills(selected, hero?hero[1]:"");
+      // close drawer on mobile after pick
+      if(window.innerWidth<768) closeDrawer();
+    });
+  });
+}
+
+// ── SEARCH ───────────────────────────────────────────────────
+document.getElementById("searchInput").addEventListener("input",e=>{
+  query=e.target.value.toLowerCase().trim();
+  renderList();
+});
+
+// ── SKILL DISPLAY ────────────────────────────────────────────
+const CARDS=[
+  {key:"p",  cls:"p",   label:"PASIF"},
+  {key:"s1", cls:"s1",  label:"SKILL 1"},
+  {key:"s2", cls:"s2",  label:"SKILL 2"},
+  {key:"ult",cls:"ult", label:"ULTIMATE"},
+];
+
+function showSkills(name,roles){
+  const skills=DB[name]||fallback(name);
+
+  // topbar
+  const topbar=document.getElementById("topbarHero");
+  gsap.to(topbar,{opacity:0,duration:.15,onComplete:()=>{
+    topbar.textContent=name;topbar.classList.add("active");
+    gsap.to(topbar,{opacity:1,duration:.2});
+  }});
+
+  // header
+  const hd=document.getElementById("hdName");
+  const ph=document.getElementById("hdPlaceholder");
+  const badges=document.getElementById("hdBadges");
+  gsap.to(ph,{opacity:0,duration:.15,onComplete:()=>{ph.style.display="none";}});
+  hd.style.display="block";
+  hd.textContent=name;
+  gsap.fromTo(hd,{opacity:0,y:10},{opacity:1,y:0,duration:.4,ease:"power3.out"});
+  badges.innerHTML=roles.split("/").map(r=>`<span class="hd-badge">${r.trim()}</span>`).join("");
+  gsap.fromTo(badges,{opacity:0,y:8},{opacity:1,y:0,duration:.35,delay:.1,ease:"power3.out"});
+
+  // cards
+  const grid=document.getElementById("skillGrid");
+  gsap.to(grid.querySelectorAll(".scard"),{
+    opacity:0,y:12,duration:.18,stagger:.04,ease:"power2.in",
+    onComplete:()=>{
+      grid.innerHTML=CARDS.map(({key,cls,label})=>{
+        const s=skills[key]||{n:"—",m:"—"};
+        return `<div class="scard ${cls}">
+          <div class="scard-glow"></div>
+          <div class="scard-tag">
+            <span class="scard-dot"></span>
+            <span class="scard-label">${label}</span>
+          </div>
+          <div class="scard-name">${esc(s.n)}</div>
+          <div class="scard-meaning">"${esc(s.m)}"</div>
+        </div>`;
+      }).join("");
+      gsap.to(grid.querySelectorAll(".scard"),{
+        opacity:1,y:0,duration:.45,stagger:.08,ease:"power3.out",delay:.05
+      });
+    }
+  });
+}
+
+function esc(s){return s?s.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])):"-";}
+
+// ── INIT ─────────────────────────────────────────────────────
+gsap.set(drawer,{x:-300});
+buildRoles();
+renderList();
+
+// entrance animation
+gsap.from(".topbar",{y:-54,opacity:0,duration:.5,ease:"power3.out"});
+gsap.from(".main",{opacity:0,duration:.6,delay:.2,ease:"power2.out"});
+</script>
+</body>
+</html>
